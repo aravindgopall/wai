@@ -98,7 +98,10 @@ gzip set app env sendResponse' = app env $ \res ->
     case res of
         ResponseRaw{} -> sendResponse res
         ResponseFile{} | gzipFiles set == GzipIgnore -> sendResponse res
-        _ -> if "gzip" `elem` enc && not isMSIE6 && not (isEncoded res) && (bigEnough res)
+        _ -> do
+          print "inside gzip"
+          print $ "gzip" `elem` enc && not isMSIE6 && not (isEncoded res) && (bigEnough res)
+          if "gzip" `elem` enc && not isMSIE6 && not (isEncoded res) && (bigEnough res)
                 then
                     let runAction x = case x of
                             (ResponseFile s hs file Nothing, GzipPreCompressed nextAction) ->
@@ -115,7 +118,9 @@ gzip set app env sendResponse' = app env $ \res ->
                                         | gzipCheckMime set m -> compressFile s hs file cache sendResponse
                                     _ -> sendResponse res
                             (ResponseFile {}, GzipIgnore) -> sendResponse res
-                            _ -> compressE set res sendResponse
+                            _ -> do
+                              print $ "inside compress"
+                              compressE set res sendResponse
                     in runAction (res, gzipFiles set)
                 else sendResponse res
   where
@@ -183,7 +188,9 @@ compressE :: GzipSettings
           -> Response
           -> (Response -> IO a)
           -> IO a
-compressE set res sendResponse =
+compressE set res sendResponse = do
+    print $ hs
+    print $  gzipCheckMime set <$> lookup hContentType hs
     case lookup hContentType hs of
         Just m | gzipCheckMime set m ->
             let hs' = fixHeaders hs
